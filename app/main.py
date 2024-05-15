@@ -11,18 +11,16 @@ class User(BaseModel):
     email: str
     password: str
 
-while True:
-    try:
-        conn = psycopg2.connect(host="localhost", database="dataMed", 
-                                user="postgres", password="123", 
-                                cursor_factory = RealDictCursor)
-        cursor = conn.cursor()
-        print("Connected to the database")
-        break
-    except Exception as error:
-        print("Error connecting to the database")
-        print("Error: ", error)
-        time.sleep(5)
+try:
+    conn = psycopg2.connect(host="localhost", database="datamed", 
+                            user="postgres", password="123", 
+                            cursor_factory = RealDictCursor)
+    cursor = conn.cursor()
+    print("Connected to the database")
+except Exception as error:
+    print("Error connecting to the database")
+    print("Error: ", error)
+    time.sleep(5)
 
 # Querys
 @app.get("/users")
