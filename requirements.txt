@@ -1,0 +1,7 @@
+fastapi
+uvicorn
+psycopg2
+pytest
+coverage
+pydantic
+python-dotenv
