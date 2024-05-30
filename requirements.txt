@@ -1,7 +1,8 @@
 fastapi
 uvicorn
-psycopg2
-pytest
-coverage
+sqlalchemy
+psycopg2-binary
 pydantic
+alembic
 python-dotenv
+pytest
