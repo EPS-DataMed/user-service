@@ -2,19 +2,16 @@ from pydantic import BaseModel
 from datetime import date
 from typing import Optional
 
-class PacienteCreate(BaseModel):
+class UsuarioCreate(BaseModel):
+    nome_completo: str
     email: str
     senha: str
-    nome: str
-    dt_nascimento: date
-    formulario: Optional[dict]
-    status_formulario: str
-    id_responsavel: Optional[int]
+    data_nascimento: date
+    sexo_biologico: str
+    formulario: Optional[dict] = None
+    status_formulario: Optional[str] = "Não iniciado"
 
 class MedicoCreate(BaseModel):
-    email: str
-    senha: str
-    nome: str
-    dt_nascimento: date
+    id_usuario: int
     crm: str
     especialidade: str
