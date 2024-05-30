@@ -5,9 +5,6 @@ from ..schemas import MedicoCreate
 def get_medico_by_id(db: Session, id_usuario: int):
     return db.query(Medico).filter(Medico.id_usuario == id_usuario).first()
 
-def get_medico_by_email(db: Session, email: str):
-    return db.query(Medico).filter(Medico.email == email).first()
-
 def create_medico(db: Session, medico: MedicoCreate):
     db_medico = Medico(**medico.dict())
     db.add(db_medico)
