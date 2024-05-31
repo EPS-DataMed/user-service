@@ -3,6 +3,7 @@ uvicorn
 sqlalchemy
 psycopg2-binary
 pydantic
-alembic
 python-dotenv
 pytest
+bcrypt
+
