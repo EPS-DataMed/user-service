@@ -1,7 +1,5 @@
-from fastapi import FastAPI, HTTPException, Depends, Request
-from fastapi.responses import JSONResponse
+from fastapi import FastAPI, HTTPException, Depends
 from sqlalchemy.orm import Session
-from sqlalchemy.exc import IntegrityError
 from typing import List
 from . import models, schemas, database
 import bcrypt
@@ -35,40 +33,62 @@ def hash_password(password: str) -> str:
     hashed_password = bcrypt.hashpw(password.encode('utf-8'), salt)
     return hashed_password.decode('utf-8')
 
-@app.exception_handler(Exception)
-async def general_exception_handler(request: Request, exc: Exception):
-    return JSONResponse(
-        status_code=500,
-        content={"message": "An unexpected error occurred."}
-    )
-
-@app.exception_handler(IntegrityError)
-async def integrity_error_handler(request: Request, exc: IntegrityError):
-    return JSONResponse(
-        status_code=400,
-        content={"message": "Integrity error occurred, likely due to duplicate entries or constraint violations."}
-    )
-
 @app.post("/usuarios", response_model=schemas.Usuario)
 def create_usuario(usuario: schemas.UsuarioCreate, db: Session = Depends(get_db)):
-    try:
-        hashed_password = hash_password(usuario.senha)
-        db_usuario = models.Usuario(
-            nome_completo=usuario.nome_completo,
-            email=usuario.email,
-            senha=hashed_password,
-            data_nascimento=usuario.data_nascimento,
-            sexo_biologico=usuario.sexo_biologico,
-            formulario=usuario.formulario,
-            status_formulario=usuario.status_formulario
-        )
-        db.add(db_usuario)
-        db.commit()
-        db.refresh(db_usuario)
-        return db_usuario
-    except IntegrityError:
-        db.rollback()
-        raise HTTPException(status_code=400, detail="Email already registered.")
+    hashed_password = hash_password(usuario.senha)
+    db_usuario = models.Usuario(
+        nome_completo=usuario.nome_completo,
+        email=usuario.email,
+        senha=hashed_password,
+        data_nascimento=usuario.data_nascimento,
+        sexo_biologico=usuario.sexo_biologico,
+        formulario=usuario.formulario,
+        status_formulario=usuario.status_formulario
+    )
+    db.add(db_usuario)
+    db.commit()
+    db.refresh(db_usuario)
+    return db_usuario
+
+@app.post("/medicos", response_model=schemas.Medico)
+def create_medico(medico: schemas.MedicoCreate, db: Session = Depends(get_db)):
+    db_medico = models.Medico(**medico.dict())
+    db.add(db_medico)
+    db.commit()
+    db.refresh(db_medico)
+    return db_medico
+
+@app.get("/medicos/{medico_id}", response_model=schemas.Medico)
+def read_medico(medico_id: int, db: Session = Depends(get_db)):
+    db_medico = db.query(models.Medico).filter(models.Medico.id_usuario == medico_id).first()
+    if db_medico is None:
+        raise HTTPException(status_code=404, detail="Medico not found")
+    return db_medico
+
+@app.get("/medicos", response_model=List[schemas.Medico])
+def read_medicos(db: Session = Depends(get_db)):
+    medicos = db.query(models.Medico).all()
+    return medicos
+
+@app.put("/medicos/{medico_id}", response_model=schemas.Medico)
+def update_medico(medico_id: int, medico: schemas.MedicoBase, db: Session = Depends(get_db)):
+    db_medico = db.query(models.Medico).filter(models.Medico.id_usuario == medico_id).first()
+    if db_medico is None:
+        raise HTTPException(status_code=404, detail="Medico not found")
+    for key, value in medico.dict().items():
+        setattr(db_medico, key, value)
+    db.commit()
+    db.refresh(db_medico)
+    return db_medico
+
+@app.delete("/medicos/{medico_id}")
+def delete_medico(medico_id: int, db: Session = Depends(get_db)):
+    db_medico = db.query(models.Medico).filter(models.Medico.id_usuario == medico_id).first()
+    if db_medico is None:
+        raise HTTPException(status_code=404, detail="Medico not found")
+    db.delete(db_medico)
+    db.commit()
+    return {"ok": True}
 
 @app.get("/usuarios/{usuario_id}", response_model=schemas.Usuario)
 def read_usuario(usuario_id: int, db: Session = Depends(get_db)):

@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, Date, DateTime, JSON, CheckConstraint
+from sqlalchemy import Column, Integer, String, Date, DateTime, JSON, CheckConstraint, ForeignKey
 from sqlalchemy.sql import func
 from .database import Base
 
@@ -14,3 +14,10 @@ class Usuario(Base):
     data_criacao = Column(DateTime, default=func.now())
     formulario = Column(JSON)
     status_formulario = Column(String(20), CheckConstraint("status_formulario IN ('Preenchido', 'Em andamento', 'Não iniciado')"), default='Não iniciado')
+
+class Medico(Base):
+    __tablename__ = "medicos"
+
+    id_usuario = Column(Integer, ForeignKey("usuarios.id"), primary_key=True)
+    crm = Column(String(50), nullable=False)
+    especialidade = Column(String(255), nullable=False)
