@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, Date, DateTime, JSON, CheckConstraint, ForeignKey
+from sqlalchemy import Column, Integer, String, Date, DateTime, JSON, CheckConstraint, ForeignKey, Boolean
 from sqlalchemy.sql import func
 from .database import Base
 
@@ -21,3 +21,10 @@ class Medico(Base):
     id_usuario = Column(Integer, ForeignKey("usuarios.id"), primary_key=True)
     crm = Column(String(50), nullable=False)
     especialidade = Column(String(255), nullable=False)
+
+class Dependente(Base):
+    __tablename__ = "dependentes"
+
+    id_usuario = Column(Integer, ForeignKey("usuarios.id"), primary_key=True)
+    id_dependente = Column(Integer, ForeignKey("usuarios.id"), primary_key=True)
+    confirmado = Column(Boolean, default=False)
