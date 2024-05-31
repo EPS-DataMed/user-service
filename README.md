@@ -1,2 +1,2 @@
-# Autentication
-Repositorie responsable for user autentication and management
+# User Service
+Repositorie responsable for user management
