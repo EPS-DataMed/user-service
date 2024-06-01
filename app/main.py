@@ -57,6 +57,9 @@ def read_root():
 # Usuários
 @app.post("/usuarios", response_model=schemas.Usuario)
 def create_usuario(usuario: schemas.UsuarioCreate, db: Session = Depends(get_db)):
+    existing_user = db.query(models.Usuario).filter(models.Usuario.email == usuario.email).first()
+    if existing_user:
+        raise HTTPException(status_code=400, detail="Email already registered")
     hashed_password = hash_password(usuario.senha)
     db_usuario = models.Usuario(
         nome_completo=usuario.nome_completo,
@@ -107,6 +110,12 @@ def delete_usuario(usuario_id: int, db: Session = Depends(get_db)):
 # Médicos
 @app.post("/medicos", response_model=schemas.Medico)
 def create_medico(medico: schemas.MedicoCreate, db: Session = Depends(get_db)):
+    db_usuario = db.query(models.Usuario).filter(models.Usuario.id == medico.id_usuario).first()
+    if not db_usuario:
+        raise HTTPException(status_code=400, detail="Associated usuario not found")
+    existing_medico = db.query(models.Medico).filter(models.Medico.id_usuario == medico.id_usuario).first()
+    if existing_medico:
+        raise HTTPException(status_code=400, detail="Medico already registered")
     db_medico = models.Medico(**medico.dict())
     db.add(db_medico)
     db.commit()
@@ -148,6 +157,16 @@ def delete_medico(medico_id: int, db: Session = Depends(get_db)):
 # Dependentes
 @app.post("/dependentes", response_model=schemas.Dependente)
 def create_dependente(dependente: schemas.DependenteCreate, db: Session = Depends(get_db)):
+    db_usuario = db.query(models.Usuario).filter(models.Usuario.id == dependente.id_usuario).first()
+    db_dependente_usuario = db.query(models.Usuario).filter(models.Usuario.id == dependente.id_dependente).first()
+    if not db_usuario or not db_dependente_usuario:
+        raise HTTPException(status_code=400, detail="Usuario or Dependente Usuario not found")
+    existing_dependente = db.query(models.Dependente).filter(
+        models.Dependente.id_usuario == dependente.id_usuario,
+        models.Dependente.id_dependente == dependente.id_dependente
+    ).first()
+    if existing_dependente:
+        raise HTTPException(status_code=400, detail="Dependente already registered")
     db_dependente = models.Dependente(**dependente.dict())
     db.add(db_dependente)
     db.commit()
