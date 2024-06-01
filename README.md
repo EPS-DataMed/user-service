@@ -11,10 +11,12 @@ Serviço do DataMed responsável pelo gerenciamento de usuários
 
 1. Clone o repositório:
 
-2. python -m venv venv
+2. Crie um ambiente virtual
 ```
-source venv/bin/activate  # No Windows use `venv\Scripts\activate`
+python -m venv venv
+source venv/bin/activate 
 ```
+Obs: No Windows use `venv\Scripts\activate`
 
 3. Instale as dependências:
 ```
