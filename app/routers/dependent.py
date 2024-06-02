@@ -10,7 +10,7 @@ router = APIRouter(
     tags=["dependentes"]
 )
 
-@router.post("/dependentes", response_model=dependentSchema.Dependente)
+@router.post("/", response_model=dependentSchema.Dependente)
 def create_dependente(dependente: dependentSchema.DependenteCreate, db: Session = Depends(get_db)):
     db_usuario = db.query(userModel.Usuario).filter(userModel.Usuario.id == dependente.id_usuario).first()
     db_dependente_usuario = db.query(userModel.Usuario).filter(userModel.Usuario.id == dependente.id_dependente).first()
@@ -28,7 +28,7 @@ def create_dependente(dependente: dependentSchema.DependenteCreate, db: Session 
     db.refresh(db_dependente)
     return db_dependente
 
-@router.get("/dependentes/{id_usuario}/{id_dependente}", response_model=dependentSchema.Dependente)
+@router.get("/{id_usuario}/{id_dependente}", response_model=dependentSchema.Dependente)
 def read_dependente(id_usuario: int, id_dependente: int, db: Session = Depends(get_db)):
     db_dependente = db.query(dependentModel.Dependente).filter(
         dependentModel.Dependente.id_usuario == id_usuario,
@@ -38,12 +38,12 @@ def read_dependente(id_usuario: int, id_dependente: int, db: Session = Depends(g
         raise HTTPException(status_code=404, detail="Dependente not found")
     return db_dependente
 
-@router.get("/dependentes", response_model=List[dependentSchema.Dependente])
+@router.get("/", response_model=List[dependentSchema.Dependente])
 def read_dependentes(db: Session = Depends(get_db)):
     dependentes = db.query(dependentModel.Dependente).all()
     return dependentes
 
-@router.put("/dependentes/{id_usuario}/{id_dependente}", response_model=dependentSchema.Dependente)
+@router.put("/{id_usuario}/{id_dependente}", response_model=dependentSchema.Dependente)
 def update_dependente(id_usuario: int, id_dependente: int, dependente: dependentSchema.DependenteBase, db: Session = Depends(get_db)):
     db_dependente = db.query(dependentModel.Dependente).filter(
         dependentModel.Dependente.id_usuario == id_usuario,
@@ -57,7 +57,7 @@ def update_dependente(id_usuario: int, id_dependente: int, dependente: dependent
     db.refresh(db_dependente)
     return db_dependente
 
-@router.delete("/dependentes/{id_usuario}/{id_dependente}")
+@router.delete("/{id_usuario}/{id_dependente}")
 def delete_dependente(id_usuario: int, id_dependente: int, db: Session = Depends(get_db)):
     db_dependente = db.query(dependentModel.Dependente).filter(
         dependentModel.Dependente.id_usuario == id_usuario,

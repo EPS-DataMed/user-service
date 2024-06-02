@@ -1,11 +1,12 @@
 from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
 from sqlalchemy.exc import IntegrityError
-from . import models, database
+from . import database
+from .database import Base
 from fastapi.middleware.cors import CORSMiddleware
 from .routers import user, medic, dependent
 
-models.Base.metadata.create_all(bind=database.engine)
+Base.metadata.create_all(bind=database.engine)
 
 app = FastAPI()
 
