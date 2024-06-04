@@ -1,77 +1,64 @@
-from fastapi import APIRouter, HTTPException, status, Response
 from typing import List
-from ..models.user import UserCreate, UserResponse
-from ..database import get_cursor, get_conn
+from fastapi import APIRouter, Depends, HTTPException
+from sqlalchemy.orm import Session
+from ..models import userModel
+from ..schemas import userSchema
+from ..database import get_db
+from ..utils import hash_password
 
 router = APIRouter(
-    prefix="/users",
-    tags=["Users"]
+    prefix="/user/users",
+    tags=["usuarios"]
 )
 
-@router.get("/", response_model=List[UserResponse])
-def get_users():
-    cursor = get_cursor()
-    cursor.execute("SELECT * FROM users")
-    users = cursor.fetchall()
-    return users
-
-@router.post("/", status_code=status.HTTP_201_CREATED, response_model=UserResponse)
-def create_user(user: UserCreate):
-    cursor = get_cursor()
-    conn = get_conn()
-    cursor.execute(
-        """INSERT INTO users (name, email, password) VALUES (%s, %s, %s) RETURNING id, name, email, password""",
-        (user.name, user.email, user.password)
+@router.post("/", response_model=userSchema.Usuario)
+def create_usuario(usuario: userSchema.UsuarioCreate, db: Session = Depends(get_db)):
+    existing_user = db.query(userModel.Usuario).filter(userModel.Usuario.email == usuario.email).first()
+    if existing_user:
+        raise HTTPException(status_code=400, detail="Email already registered")
+    hashed_password = hash_password(usuario.senha)
+    db_usuario = userModel.Usuario(
+        nome_completo=usuario.nome_completo,
+        email=usuario.email,
+        senha=hashed_password,
+        data_nascimento=usuario.data_nascimento,
+        sexo_biologico=usuario.sexo_biologico,
+        formulario=usuario.formulario,
+        status_formulario=usuario.status_formulario
     )
-    new_user = cursor.fetchone()
-    conn.commit()
-    return new_user
+    db.add(db_usuario)
+    db.commit()
+    db.refresh(db_usuario)
+    return db_usuario
 
-@router.get("/{id}", response_model=UserResponse)
-def get_user(id: int):
-    cursor = get_cursor()
-    cursor.execute("SELECT id, name, email, password FROM users WHERE id = %s", (id,))
-    user = cursor.fetchone()
-    
-    if user is None:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"User with id {id} does not exist"
-        )
-    
-    return user
+@router.get("/{usuario_id}", response_model=userSchema.Usuario)
+def read_usuario(usuario_id: int, db: Session = Depends(get_db)):
+    db_usuario = db.query(userModel.Usuario).filter(userModel.Usuario.id == usuario_id).first()
+    if db_usuario is None:
+        raise HTTPException(status_code=404, detail="Usuario not found")
+    return db_usuario
 
-@router.delete("/{id}", status_code=status.HTTP_204_NO_CONTENT)
-def delete_user(id: int):
-    cursor = get_cursor()
-    conn = get_conn()
-    cursor.execute("DELETE FROM users WHERE id = %s RETURNING id", (id,))
-    deleted_user = cursor.fetchone()
-    conn.commit()
-    
-    if deleted_user is None:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"User with id {id} does not exist"
-        )
-    
-    return Response(status_code=status.HTTP_204_NO_CONTENT)
+@router.get("/", response_model=List[userSchema.Usuario])
+def read_usuarios(db: Session = Depends(get_db)):
+    usuarios = db.query(userModel.Usuario).all()
+    return usuarios
 
-@router.put("/{id}", response_model=UserResponse)
-def update_user(id: int, user: UserCreate):
-    cursor = get_cursor()
-    conn = get_conn()
-    cursor.execute(
-        """UPDATE users SET name = %s, email = %s, password = %s WHERE id = %s RETURNING id, name, email, password""",
-        (user.name, user.email, user.password, id)
-    )
-    updated_user = cursor.fetchone()
-    conn.commit()
-    
-    if updated_user is None:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"User with id {id} does not exist"
-        )
-    
-    return updated_user
+@router.put("/{usuario_id}", response_model=userSchema.Usuario)
+def update_usuario(usuario_id: int, usuario: userSchema.UsuarioUpdate, db: Session = Depends(get_db)):
+    db_usuario = db.query(userModel.Usuario).filter(userModel.Usuario.id == usuario_id).first()
+    if db_usuario is None:
+        raise HTTPException(status_code=404, detail="Usuario not found")
+    for key, value in usuario.dict().items():
+        setattr(db_usuario, key, value)
+    db.commit()
+    db.refresh(db_usuario)
+    return db_usuario
+
+@router.delete("/{usuario_id}")
+def delete_usuario(usuario_id: int, db: Session = Depends(get_db)):
+    db_usuario = db.query(userModel.Usuario).filter(userModel.Usuario.id == usuario_id).first()
+    if db_usuario is None:
+        raise HTTPException(status_code=404, detail="Usuario not found")
+    db.delete(db_usuario)
+    db.commit()
+    return {"ok": True}
