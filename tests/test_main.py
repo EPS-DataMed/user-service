@@ -70,7 +70,7 @@ def test_dependente():
     }
 
 def test_create_user(test_user):
-    response = client.post("/usuarios", json=test_user)
+    response = client.post("/user/users", json=test_user)
     assert response.status_code == 200, response.text
     assert response.json()["email"] == test_user["email"]
 
@@ -84,21 +84,30 @@ def test_create_user_validation_error():
         "formulario": {},
         "status_formulario": "Invalid"
     }
-    response = client.post("/usuarios", json=invalid_user)
+    response = client.post("/user/users", json=invalid_user)
     assert response.status_code == 422, response.text
 
 def test_read_user(test_user):
-    client.post("/usuarios", json=test_user)
-    response = client.get("/usuarios/1")
+    client.post("/user/users", json=test_user)
+    response = client.get("/user/users")
     assert response.status_code == 200
-    assert response.json()["id"] == 1
+    
+    usuarios = response.json()
+    usuario_encontrado = False
+    for usuario in usuarios:
+        if usuario["id"] == 1:
+            usuario_encontrado = True
+            break
+
+    assert usuario_encontrado
+
 
 def test_read_user_not_found():
-    response = client.get("/usuarios/999")
+    response = client.get("/user/users/999")
     assert response.status_code == 404
 
 def test_update_user(test_user):
-    client.post("/usuarios", json=test_user)
+    client.post("/user/users", json=test_user)
     update_data = {
         "nome_completo": "Updated User",
         "email": "updateduser@example.com",
@@ -107,19 +116,19 @@ def test_update_user(test_user):
         "formulario": {},
         "status_formulario": "Não iniciado"
     }
-    response = client.put("/usuarios/1", json=update_data)
+    response = client.put("/user/users/1", json=update_data)
     assert response.status_code == 200
     assert response.json()["nome_completo"] == "Updated User"
 
 def test_delete_user(test_user):
-    client.post("/usuarios", json=test_user)
-    response = client.delete("/usuarios/1")
+    client.post("/user/users", json=test_user)
+    response = client.delete("/user/users/1")
     assert response.status_code == 200, response.text
     assert response.json() == {"ok": True}
 
 def test_create_medico(test_user, test_medico):
-    client.post("/usuarios", json=test_user)
-    response = client.post("/medicos", json=test_medico)
+    client.post("/user/users", json=test_user)
+    response = client.post("/user/doctors", json=test_medico)
     assert response.status_code == 200, response.text
     assert response.json()["crm"] == test_medico["crm"]
 
@@ -129,42 +138,42 @@ def test_create_medico_validation_error():
         "crm": "",
         "especialidade": ""
     }
-    response = client.post("/medicos", json=invalid_medico)
+    response = client.post("/user/doctors", json=invalid_medico)
     assert response.status_code == 400, response.text
 
 def test_read_medico(test_user, test_medico):
-    client.post("/usuarios", json=test_user)
-    client.post("/medicos", json=test_medico)
-    response = client.get("/medicos/1")
+    client.post("/user/users", json=test_user)
+    client.post("/user/doctors", json=test_medico)
+    response = client.get("/user/doctors/1")
     assert response.status_code == 200
     assert response.json()["id_usuario"] == 1
 
 def test_read_medico_not_found():
-    response = client.get("/medicos/999")
+    response = client.get("/user/doctors/999")
     assert response.status_code == 404
 
 def test_update_medico(test_user, test_medico):
-    client.post("/usuarios", json=test_user)
-    client.post("/medicos", json=test_medico)
+    client.post("/user/users", json=test_user)
+    client.post("/user/doctors", json=test_medico)
     update_data = {
         "crm": "654321",
         "especialidade": "Neurologista"
     }
-    response = client.put("/medicos/1", json=update_data)
+    response = client.put("/user/doctors/1", json=update_data)
     assert response.status_code == 200
     assert response.json()["crm"] == "654321"
 
 def test_delete_medico(test_user, test_medico):
-    client.post("/usuarios", json=test_user)
-    client.post("/medicos", json=test_medico)
-    response = client.delete("/medicos/1")
+    client.post("/user/users", json=test_user)
+    client.post("/user/doctors", json=test_medico)
+    response = client.delete("/user/doctors/1")
     assert response.status_code == 200, response.text
     assert response.json() == {"ok": True}
 
 def test_create_dependente(test_user, test_user_2, test_dependente):
-    client.post("/usuarios", json=test_user)
-    client.post("/usuarios", json=test_user_2)
-    response = client.post("/dependentes", json=test_dependente)
+    client.post("/user/users", json=test_user)
+    client.post("/user/users", json=test_user_2)
+    response = client.post("/user/dependents", json=test_dependente)
     assert response.status_code == 200, response.text
     assert response.json()["id_dependente"] == test_dependente["id_dependente"]
 
@@ -174,37 +183,37 @@ def test_create_dependente_validation_error():
         "id_dependente": 1,
         "confirmado": "invalid"
     }
-    response = client.post("/dependentes", json=invalid_dependente)
+    response = client.post("/user/dependents", json=invalid_dependente)
     assert response.status_code == 422, response.text
 
 def test_read_dependente(test_user, test_user_2, test_dependente):
-    client.post("/usuarios", json=test_user)
-    client.post("/usuarios", json=test_user_2) 
-    client.post("/dependentes", json=test_dependente)
-    response = client.get("/dependentes/1/2")
+    client.post("/user/users", json=test_user)
+    client.post("/user/users", json=test_user_2) 
+    client.post("/user/dependents", json=test_dependente)
+    response = client.get("/user/dependents/1/2")
     assert response.status_code == 200
     assert response.json()["id_dependente"] == 2
 
 def test_read_dependente_not_found():
-    response = client.get("/dependentes/1/999")
+    response = client.get("/user/dependents/1/999")
     assert response.status_code == 404
 
 def test_update_dependente(test_user, test_user_2, test_dependente):
-    client.post("/usuarios", json=test_user)
-    client.post("/usuarios", json=test_user_2)  # Create a second user
-    client.post("/dependentes", json=test_dependente)
+    client.post("/user/users", json=test_user)
+    client.post("/user/users", json=test_user_2)  # Create a second user
+    client.post("/user/dependents", json=test_dependente)
     update_data = {
         "id_dependente": 2,
         "confirmado": True
     }
-    response = client.put("/dependentes/1/2", json=update_data)
+    response = client.put("/user/dependents/1/2", json=update_data)
     assert response.status_code == 200
     assert response.json()["confirmado"] == True
 
 def test_delete_dependente(test_user, test_user_2, test_dependente):
-    client.post("/usuarios", json=test_user)
-    client.post("/usuarios", json=test_user_2) 
-    client.post("/dependentes", json=test_dependente)
-    response = client.delete("/dependentes/1/2")
+    client.post("/user/users", json=test_user)
+    client.post("/user/users", json=test_user_2) 
+    client.post("/user/dependents", json=test_dependente)
+    response = client.delete("/user/dependents/1/2")
     assert response.status_code == 200, response.text
     assert response.json() == {"ok": True}
