@@ -6,7 +6,7 @@ from ..schemas import dependentSchema
 from ..database import get_db
 
 router = APIRouter(
-    prefix="/dependentes",
+    prefix="/user/dependents",
     tags=["dependentes"]
 )
 

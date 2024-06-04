@@ -7,7 +7,7 @@ from ..database import get_db
 from ..utils import hash_password
 
 router = APIRouter(
-    prefix="/usuarios",
+    prefix="/user/users",
     tags=["usuarios"]
 )
 
