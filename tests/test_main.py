@@ -1,19 +1,16 @@
 from fastapi.testclient import TestClient
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
-from app.main import app, get_db
-from app.database import Base
+from app.main import app
+from app.database import Base, get_db
 import pytest
 
-# Configure the database URL for testing
 SQLALCHEMY_DATABASE_URL = "sqlite:///./test.db"
 engine = create_engine(SQLALCHEMY_DATABASE_URL, connect_args={"check_same_thread": False})
 TestingSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
-# Create the database tables
 Base.metadata.create_all(bind=engine)
 
-# Dependency override to use the test database
 def override_get_db():
     try:
         db = TestingSessionLocal()
@@ -27,11 +24,9 @@ client = TestClient(app)
 
 @pytest.fixture(autouse=True)
 def setup_and_teardown():
-    # Setup: Clean up database before each test
     Base.metadata.drop_all(bind=engine)
     Base.metadata.create_all(bind=engine)
     yield
-    # Teardown: Clean up database after each test
     Base.metadata.drop_all(bind=engine)
 
 @pytest.fixture
@@ -130,7 +125,7 @@ def test_create_medico(test_user, test_medico):
 
 def test_create_medico_validation_error():
     invalid_medico = {
-        "id_usuario": 999,  # Assuming this user doesn't exist
+        "id_usuario": 999, 
         "crm": "",
         "especialidade": ""
     }
@@ -168,7 +163,7 @@ def test_delete_medico(test_user, test_medico):
 
 def test_create_dependente(test_user, test_user_2, test_dependente):
     client.post("/usuarios", json=test_user)
-    client.post("/usuarios", json=test_user_2)  # Create a second user
+    client.post("/usuarios", json=test_user_2)
     response = client.post("/dependentes", json=test_dependente)
     assert response.status_code == 200, response.text
     assert response.json()["id_dependente"] == test_dependente["id_dependente"]
@@ -184,7 +179,7 @@ def test_create_dependente_validation_error():
 
 def test_read_dependente(test_user, test_user_2, test_dependente):
     client.post("/usuarios", json=test_user)
-    client.post("/usuarios", json=test_user_2)  # Create a second user
+    client.post("/usuarios", json=test_user_2) 
     client.post("/dependentes", json=test_dependente)
     response = client.get("/dependentes/1/2")
     assert response.status_code == 200
@@ -208,7 +203,7 @@ def test_update_dependente(test_user, test_user_2, test_dependente):
 
 def test_delete_dependente(test_user, test_user_2, test_dependente):
     client.post("/usuarios", json=test_user)
-    client.post("/usuarios", json=test_user_2)  # Create a second user
+    client.post("/usuarios", json=test_user_2) 
     client.post("/dependentes", json=test_dependente)
     response = client.delete("/dependentes/1/2")
     assert response.status_code == 200, response.text

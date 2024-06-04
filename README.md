@@ -33,5 +33,3 @@ Obs: para rodar os testes:
 ```
 pytest
 ```
-
-
