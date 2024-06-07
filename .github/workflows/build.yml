@@ -21,6 +21,8 @@ jobs:
         run: pip install tox
       - name: Run tox
         run: tox -e py
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
       - name: SonarCloud Scan
         uses: SonarSource/sonarcloud-github-action@master
         env:
