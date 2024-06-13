@@ -1,9 +1,9 @@
 from sqlalchemy import Column, Integer, ForeignKey, Boolean
-from ..database import Base
+from app.database import Base
 
-class Dependente(Base):
-    __tablename__ = "dependentes"
+class Dependent(Base):
+    __tablename__ = "dependents"
 
-    id_usuario = Column(Integer, ForeignKey("usuarios.id"), primary_key=True)
-    id_dependente = Column(Integer, ForeignKey("usuarios.id"), primary_key=True)
-    confirmado = Column(Boolean, default=False)
+    user_id = Column(Integer, ForeignKey("users.id"), primary_key=True)
+    dependent_id = Column(Integer, ForeignKey("users.id"), primary_key=True)
+    confirmed = Column(Boolean, default=False)
