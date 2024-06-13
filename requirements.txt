@@ -7,5 +7,5 @@ python-dotenv
 pytest
 pytest-cov
 requests
-bcrypt
+bcrypt==3.2.0
 passlib

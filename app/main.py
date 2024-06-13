@@ -4,7 +4,7 @@ from sqlalchemy.exc import IntegrityError
 from . import database
 from .database import Base
 from fastapi.middleware.cors import CORSMiddleware
-from .routers import user, medic, dependent
+from .routers import doctor, user, dependent
 
 Base.metadata.create_all(bind=database.engine)
 
@@ -23,15 +23,14 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Rotas de serviço
+# Service routes
 app.include_router(user.router)
-app.include_router(medic.router)
+app.include_router(doctor.router)
 app.include_router(dependent.router)
 
 @app.get("/")
 def read_root():
     return {"message": "Welcome to the Usuarios API"}
-
 
 @app.exception_handler(Exception)
 async def general_exception_handler(request: Request, exc: Exception):
