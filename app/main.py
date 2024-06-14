@@ -23,7 +23,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Service routes
+# Rotas de serviço
 app.include_router(user.router)
 app.include_router(doctor.router)
 app.include_router(dependent.router)
