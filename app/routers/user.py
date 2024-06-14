@@ -2,7 +2,8 @@ from typing import List
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from app.models.userModel import User
-from app.schemas.userSchema import UserUpdate, User as UserSchema
+from app.models.doctorModel import Doctor
+from app.schemas.userSchema import UserUpdate, User as UserSchema, UserWithDoctor as UserWithDoctorSchema
 from app.database import get_db
 
 router = APIRouter(
@@ -41,3 +42,16 @@ def delete_user(user_id: int, db: Session = Depends(get_db)):
     db.delete(db_user)
     db.commit()
     return {"ok": True}
+
+@router.get("/with-doctor/{user_id}", response_model=UserWithDoctorSchema)
+def get_user_with_doctor(user_id: int, db: Session = Depends(get_db)):
+    db_user = db.query(User).filter(User.id == user_id).first()
+    if db_user is None:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    db_doctor = db.query(Doctor).filter(Doctor.user_id == user_id).first()
+    user_data = db_user.__dict__
+    if db_doctor:
+        user_data["doctor"] = db_doctor
+
+    return user_data

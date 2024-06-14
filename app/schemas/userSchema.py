@@ -1,5 +1,6 @@
 from pydantic import BaseModel, EmailStr, Field
 from datetime import date, datetime
+from typing import Optional
 
 class UserBase(BaseModel):
     full_name: str = Field(..., max_length=255)
@@ -20,3 +21,20 @@ class User(UserBase):
 
     class Config:
         orm_mode = True
+
+class DoctorBase(BaseModel):
+    crm: str = Field(..., max_length=50)
+    specialty: str = Field(..., max_length=255)
+
+class Doctor(DoctorBase):
+    user_id: int
+
+    class Config:
+        orm_mode = True
+
+class UserWithDoctor(User):
+    doctor: Optional[Doctor] = None
+
+    class Config:
+        orm_mode = True
+        arbitrary_types_allowed = True
