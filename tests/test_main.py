@@ -265,3 +265,24 @@ def test_delete_dependent(test_user, test_user_2, test_dependent):
     response = client.delete(f"/user/dependents/{db_dependent.user_id}/{db_dependent.dependent_id}")
     assert response.status_code == 200, response.text
     assert response.json() == {"ok": True}
+
+def test_get_user_with_doctor(test_user, test_doctor):
+    with TestingSessionLocal() as db:
+        db_user = User(**test_user)
+        db.add(db_user)
+        db.commit()
+        db.refresh(db_user)
+
+        db_doctor = Doctor(**test_doctor)
+        db.add(db_doctor)
+        db.commit()
+        db.refresh(db_doctor)
+
+        user_id = db_user.id
+    
+    response = client.get(f"/user/users/with-doctor/{user_id}")
+    assert response.status_code == 200
+    data = response.json()
+    assert data["id"] == user_id
+    assert "doctor" in data
+    assert data["doctor"]["crm"] == test_doctor["crm"]
