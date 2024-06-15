@@ -1,70 +1,70 @@
 from typing import List
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
-from ..models import dependentModel, userModel
-from ..schemas import dependentSchema
-from ..database import get_db
+from app.models import dependentModel, userModel
+from app.schemas import dependentSchema
+from app.database import get_db
 
 router = APIRouter(
     prefix="/user/dependents",
     tags=["dependentes"]
 )
 
-@router.post("/", response_model=dependentSchema.Dependente)
-def create_dependente(dependente: dependentSchema.DependenteCreate, db: Session = Depends(get_db)):
-    db_usuario = db.query(userModel.Usuario).filter(userModel.Usuario.id == dependente.id_usuario).first()
-    db_dependente_usuario = db.query(userModel.Usuario).filter(userModel.Usuario.id == dependente.id_dependente).first()
-    if not db_usuario or not db_dependente_usuario:
-        raise HTTPException(status_code=400, detail="Usuario or Dependente Usuario not found")
-    existing_dependente = db.query(dependentModel.Dependente).filter(
-        dependentModel.Dependente.id_usuario == dependente.id_usuario,
-        dependentModel.Dependente.id_dependente == dependente.id_dependente
+@router.post("/", response_model=dependentSchema.Dependent)
+def create_dependent(dependent: dependentSchema.DependentCreate, db: Session = Depends(get_db)):
+    db_user = db.query(userModel.User).filter(userModel.User.id == dependent.user_id).first()
+    db_dependent_user = db.query(userModel.User).filter(userModel.User.id == dependent.dependent_id).first()
+    if not db_user or not db_dependent_user:
+        raise HTTPException(status_code=400, detail="User or Dependent User not found")
+    existing_dependent = db.query(dependentModel.Dependent).filter(
+        dependentModel.Dependent.user_id == dependent.user_id,
+        dependentModel.Dependent.dependent_id == dependent.dependent_id
     ).first()
-    if existing_dependente:
-        raise HTTPException(status_code=400, detail="Dependente already registered")
-    db_dependente = dependentModel.Dependente(**dependente.dict())
-    db.add(db_dependente)
+    if existing_dependent:
+        raise HTTPException(status_code=400, detail="Dependent already registered")
+    db_dependent = dependentModel.Dependent(**dependent.model_dump())
+    db.add(db_dependent)
     db.commit()
-    db.refresh(db_dependente)
-    return db_dependente
+    db.refresh(db_dependent)
+    return db_dependent
 
-@router.get("/{id_usuario}/{id_dependente}", response_model=dependentSchema.Dependente)
-def read_dependente(id_usuario: int, id_dependente: int, db: Session = Depends(get_db)):
-    db_dependente = db.query(dependentModel.Dependente).filter(
-        dependentModel.Dependente.id_usuario == id_usuario,
-        dependentModel.Dependente.id_dependente == id_dependente
+@router.get("/{user_id}/{dependent_id}", response_model=dependentSchema.Dependent)
+def read_dependent(user_id: int, dependent_id: int, db: Session = Depends(get_db)):
+    db_dependent = db.query(dependentModel.Dependent).filter(
+        dependentModel.Dependent.user_id == user_id,
+        dependentModel.Dependent.dependent_id == dependent_id
     ).first()
-    if db_dependente is None:
-        raise HTTPException(status_code=404, detail="Dependente not found")
-    return db_dependente
+    if db_dependent is None:
+        raise HTTPException(status_code=404, detail="Dependent not found")
+    return db_dependent
 
-@router.get("/", response_model=List[dependentSchema.Dependente])
-def read_dependentes(db: Session = Depends(get_db)):
-    dependentes = db.query(dependentModel.Dependente).all()
-    return dependentes
+@router.get("/", response_model=List[dependentSchema.Dependent])
+def read_dependents(db: Session = Depends(get_db)):
+    dependents = db.query(dependentModel.Dependent).all()
+    return dependents
 
-@router.put("/{id_usuario}/{id_dependente}", response_model=dependentSchema.Dependente)
-def update_dependente(id_usuario: int, id_dependente: int, dependente: dependentSchema.DependenteBase, db: Session = Depends(get_db)):
-    db_dependente = db.query(dependentModel.Dependente).filter(
-        dependentModel.Dependente.id_usuario == id_usuario,
-        dependentModel.Dependente.id_dependente == id_dependente
+@router.put("/{user_id}/{dependent_id}", response_model=dependentSchema.Dependent)
+def update_dependent(user_id: int, dependent_id: int, dependent: dependentSchema.DependentBase, db: Session = Depends(get_db)):
+    db_dependent = db.query(dependentModel.Dependent).filter(
+        dependentModel.Dependent.user_id == user_id,
+        dependentModel.Dependent.dependent_id == dependent_id
     ).first()
-    if db_dependente is None:
-        raise HTTPException(status_code=404, detail="Dependente not found")
-    for key, value in dependente.dict().items():
-        setattr(db_dependente, key, value)
+    if db_dependent is None:
+        raise HTTPException(status_code=404, detail="Dependent not found")
+    for key, value in dependent.model_dump().items():
+        setattr(db_dependent, key, value)
     db.commit()
-    db.refresh(db_dependente)
-    return db_dependente
+    db.refresh(db_dependent)
+    return db_dependent
 
-@router.delete("/{id_usuario}/{id_dependente}")
-def delete_dependente(id_usuario: int, id_dependente: int, db: Session = Depends(get_db)):
-    db_dependente = db.query(dependentModel.Dependente).filter(
-        dependentModel.Dependente.id_usuario == id_usuario,
-        dependentModel.Dependente.id_dependente == id_dependente
+@router.delete("/{user_id}/{dependent_id}")
+def delete_dependent(user_id: int, dependent_id: int, db: Session = Depends(get_db)):
+    db_dependent = db.query(dependentModel.Dependent).filter(
+        dependentModel.Dependent.user_id == user_id,
+        dependentModel.Dependent.dependent_id == dependent_id
     ).first()
-    if db_dependente is None:
-        raise HTTPException(status_code=404, detail="Dependente not found")
-    db.delete(db_dependente)
+    if db_dependent is None:
+        raise HTTPException(status_code=404, detail="Dependent not found")
+    db.delete(db_dependent)
     db.commit()
     return {"ok": True}

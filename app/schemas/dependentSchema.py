@@ -1,15 +1,15 @@
 from pydantic import BaseModel
 from typing import Optional
 
-class DependenteBase(BaseModel):
-    id_dependente: int
-    confirmado: Optional[bool] = False
+class DependentBase(BaseModel):
+    dependent_id: int
+    confirmed: Optional[bool] = False
 
-class DependenteCreate(DependenteBase):
-    id_usuario: int
+class DependentCreate(DependentBase):
+    user_id: int
 
-class Dependente(DependenteBase):
-    id_usuario: int
+class Dependent(DependentBase):
+    user_id: int
 
     class Config:
         orm_mode = True
