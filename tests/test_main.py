@@ -89,22 +89,19 @@ def test_read_user_not_found():
     response = client.get("/user/users/999")
     assert response.status_code == 404
 
-def test_update_user(test_user):
+def test_patch_user(test_user):
     with TestingSessionLocal() as db:
         db_user = User(**test_user)
         db.add(db_user)
         db.commit()
         db.refresh(db_user)
     
-    update_data = {
-        "full_name": "Updated User",
-        "email": "updateduser@example.com",
-        "birth_date": "1990-01-01",
-        "biological_sex": "M"
+    patch_data = {
+        "full_name": "Partially Updated User"
     }
-    response = client.put(f"/user/users/{db_user.id}", json=update_data)
+    response = client.patch(f"/user/users/{db_user.id}", json=patch_data)
     assert response.status_code == 200
-    assert response.json()["full_name"] == "Updated User"
+    assert response.json()["full_name"] == "Partially Updated User"
 
 def test_delete_user(test_user):
     with TestingSessionLocal() as db:
