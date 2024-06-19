@@ -3,10 +3,10 @@ from datetime import date, datetime
 from typing import Optional
 
 class UserBase(BaseModel):
-    full_name: str = Field(..., max_length=255)
-    email: EmailStr
-    birth_date: date
-    biological_sex: str = Field(..., max_length=1, pattern='^(M|F)$')
+    full_name: Optional[str] = Field(None, max_length=255)
+    email: Optional[EmailStr] = None
+    birth_date: Optional[date] = None
+    biological_sex: Optional[str] = Field(None, max_length=1, pattern='^(M|F)$')
 
 class UserCreate(UserBase):
     password: str = Field(..., min_length=6)
