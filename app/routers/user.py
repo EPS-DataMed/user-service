@@ -5,6 +5,7 @@ from app.models.userModel import User
 from app.models.doctorModel import Doctor
 from app.schemas.userSchema import UserUpdate, User as UserSchema, UserWithDoctor as UserWithDoctorSchema
 from app.database import get_db
+from app import utils
 
 router = APIRouter(
     prefix="/user/users",
@@ -23,14 +24,18 @@ def read_users(db: Session = Depends(get_db)):
     users = db.query(User).all()
     return users
 
-@router.patch("/{user_id}", response_model=UserSchema)
-def update_user(user_id: int, user: UserUpdate, db: Session = Depends(get_db)):
+@router.patch("/{user_id}/password", response_model=UserSchema)
+def update_user_password(user_id: int, old_password: str, new_password: str, db: Session = Depends(get_db)):
     db_user = db.query(User).filter(User.id == user_id).first()
     if db_user is None:
         raise HTTPException(status_code=404, detail="User not found")
-    update_data = user.dict(exclude_unset=True)
-    for key, value in update_data.items():
-        setattr(db_user, key, value)
+    
+    decrypted_password = utils.decrypt_password(db_user.password)
+    if not utils.verify_password(old_password, decrypted_password):
+        raise HTTPException(status_code=400, detail="Old password does not match")
+    
+    encrypted_password = utils.encrypt_password(new_password)
+    db_user.password = encrypted_password
     db.commit()
     db.refresh(db_user)
     return db_user
