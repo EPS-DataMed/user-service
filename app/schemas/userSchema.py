@@ -14,13 +14,21 @@ class UserCreate(UserBase):
 class UserUpdate(UserBase):
     pass
 
-class User(UserBase):
+class User(BaseModel):
     id: int
+    full_name: Optional[str] = Field(None, max_length=255)
+    email: Optional[EmailStr] = None
+    birth_date: Optional[date] = None
+    biological_sex: Optional[str] = Field(None, max_length=1, pattern='^(M|F)$')
     creation_date: datetime
     password: str
 
     class Config:
         orm_mode = True
+
+class UserUpdatePassword(BaseModel):
+    old_password: str = Field(..., min_length=6)
+    new_password: str = Field(..., min_length=6)
 
 class DoctorBase(BaseModel):
     crm: str = Field(..., max_length=50)
