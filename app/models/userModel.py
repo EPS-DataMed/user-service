@@ -1,14 +1,19 @@
-from sqlalchemy import Column, Integer, String, Date, DateTime, CheckConstraint
-from sqlalchemy.sql import func
+from sqlalchemy import Column, Integer, String, Date, TIMESTAMP
+from sqlalchemy.orm import relationship
 from app.database import Base
 
 class User(Base):
-    __tablename__ = "users"
+    __tablename__ = "Users"
 
     id = Column(Integer, primary_key=True, index=True)
-    full_name = Column(String, nullable=False)
-    email = Column(String, unique=True, nullable=False)
-    password = Column(String, nullable=False)
+    full_name = Column(String(255), nullable=False)
+    email = Column(String(255), unique=True, nullable=False)
+    password = Column(String(2048), nullable=False)
     birth_date = Column(Date, nullable=False)
-    biological_sex = Column(String(1), CheckConstraint("biological_sex IN ('M', 'F')"), nullable=False)
-    creation_date = Column(DateTime, default=func.now())
+    biological_sex = Column(String(1), nullable=False)
+    creation_date = Column(TIMESTAMP, server_default="CURRENT_TIMESTAMP")
+
+    doctors = relationship("Doctor", back_populates="user")
+    dependents = relationship("Dependent", foreign_keys="[Dependent.user_id]")
+    tests = relationship("Test", back_populates="user")
+    forms = relationship("Form", back_populates="user")
