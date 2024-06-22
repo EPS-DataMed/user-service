@@ -10,7 +10,7 @@ from datetime import datetime, timedelta
 from app.database import get_db
 
 import jwt
-from ..schemas import emailSchema
+from app.schemas.emailSchema import EmailSchema
 import email.message
 
 load_dotenv()
@@ -175,7 +175,7 @@ def read_user_dependents(user_id: int, db: Session = Depends(get_db)):
     return results
 
 @router.post("/confirm/{user_id}")
-def confirm_dependent(user_id: int, request: emailSchema, db: Session = Depends(get_db)):
+def confirm_dependent(user_id: int, request: EmailSchema, db: Session = Depends(get_db)):
     existing_user = db.query(userModel.User).filter(userModel.User.email == request.email).first()
     if existing_user is None:
         raise HTTPException(status_code=404, detail="User with the specified email not found")
@@ -235,4 +235,3 @@ def confirm_dependent(user_id: int, request: emailSchema, db: Session = Depends(
     print("E-mail enviado com sucesso!") 
 
     return {"message": "Email enviado!"}
-
