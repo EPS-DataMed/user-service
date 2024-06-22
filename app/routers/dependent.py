@@ -1,9 +1,22 @@
+import os
+import smtplib
+from dotenv import load_dotenv
 from typing import List
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from app.models import dependentModel, userModel, formModel
 from app.schemas import dependentSchema
+from datetime import datetime, timedelta
 from app.database import get_db
+
+import jwt
+from ..schemas import emailSchema
+import email.message
+
+load_dotenv()
+
+login = os.getenv("MAIL_USERNAME")
+password = os.getenv("MAIL_PASSWORD")
 
 router = APIRouter(
     prefix="/user/dependents",
@@ -162,11 +175,47 @@ def read_user_dependents(user_id: int, db: Session = Depends(get_db)):
     return results
 
 @router.post("/confirm")
-def confirm_dependent(body: dependentSchema.ConfirmDependentBody, db: Session = Depends(get_db)):
-    db_user = db.query(userModel.User).filter(userModel.User.email == body.email).first()
-    if db_user is None:
+def confirm_dependent(request: emailSchema.EmailSchema, db: Session = Depends(get_db)):
+    existing_user = db.query(userModel.User).filter(userModel.User.email == request.email).first()
+    if existing_user is None:
         raise HTTPException(status_code=404, detail="User with the specified email not found")
     
-    # Lógica de envio de e-mail será implementada aqui futuramente
-    # Por enquanto, vamos apenas retornar uma mensagem de confirmação
-    return {"message": "Email verification sent successfully"}
+    token_data = {
+        "email": request.email,
+        "expires": str(datetime.utcnow() + timedelta(minutes=30))
+    }
+
+    reset_code = jwt.encode(token_data, os.getenv("SECRET_KEY"), algorithm=os.getenv("ALGORITHM"))
+    html = """
+    <!DOCTYPE html>
+    <html>
+    <title>Recuperação de senha</title>
+    <body>
+    <div styles="width: 100%; font-family: monospace;">
+        <h1>Recuperação de senha</h1>
+        <p>Olá, {0}!</p>
+        <p>Recebemos uma solicitação de recuperação de senha para sua conta.</p>
+        <p>Para redefinir sua senha, clique no link abaixo:</p>
+        <a href="{1}/reset-password?code={2}">Recuperar senha</a>
+        <p>Para a sua segurança o link expira em 30 minutos.</p>
+        <p>Se você não solicitou a recuperação de senha, ignore este e-mail.</p>
+    <div>
+    </body>
+    </html>
+    """.format(existing_user.full_name, os.getenv("FRONTEND_URL"), reset_code)
+
+    message = email.message.Message()
+    message["Subject"] = "Recuperação de senha"
+    message["From"] = login
+    message["To"] = request.email
+    message.add_header("Content-Type", "text/html")
+    message.set_payload(html)
+
+    server = smtplib.SMTP("smtp.gmail.com", 587)
+    server.starttls()
+
+    server.login(login, password)
+    server.sendmail(login, request.email, message.as_string().encode("utf-8"))
+    print("E-mail enviado com sucesso!") 
+
+    return {"message": "Email enviado!"}
