@@ -4,7 +4,7 @@ from dotenv import load_dotenv
 from typing import List
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
-from app.models import dependentModel, userModel, formModel
+from app.models import dependentModel, userModel, formModel, doctorModel
 from app.schemas import dependentSchema
 from datetime import datetime, timedelta
 from app.database import get_db
@@ -174,39 +174,52 @@ def read_user_dependents(user_id: int, db: Session = Depends(get_db)):
 
     return results
 
-@router.post("/confirm")
-def confirm_dependent(request: emailSchema.EmailSchema, db: Session = Depends(get_db)):
+@router.post("/confirm/{user_id}")
+def confirm_dependent(user_id: int, request: emailSchema, db: Session = Depends(get_db)):
     existing_user = db.query(userModel.User).filter(userModel.User.email == request.email).first()
     if existing_user is None:
         raise HTTPException(status_code=404, detail="User with the specified email not found")
     
+    dependent_id = existing_user.id
+
     token_data = {
         "email": request.email,
         "expires": str(datetime.utcnow() + timedelta(hours=24))
     }
 
     reset_code = jwt.encode(token_data, os.getenv("SECRET_KEY"), algorithm=os.getenv("ALGORITHM"))
+
+    doctor = db.query(doctorModel.Doctor).filter(doctorModel.Doctor.user_id == user_id).first()
+    if doctor:
+        link = "{0}/auth/dependents/confirm/{1}/{2}/{3}/{4}".format(
+            os.getenv("FRONTEND_URL"), user_id, dependent_id, reset_code, doctor.crm
+        )
+    else:
+        link = "{0}/auth/dependents/confirm/{1}/{2}/{3}".format(
+            os.getenv("FRONTEND_URL"), user_id, dependent_id, reset_code
+        )
+
     html = """
     <!DOCTYPE html>
     <html>
     <title>Confirmação de dependente</title>
     <body>
-    <div styles="width: 100%; font-family: monospace;">
+    <div style="width: 100%; font-family: monospace;">
         <h1>Confirmação de dependente</h1>
         <p>Olá, {0}!</p>
-        <p>Recebemos uma solicitação deConfirmação de dependente para sua conta.</p>
+        <p>Recebemos uma solicitação de confirmação de dependente para sua conta.</p>
         <p>Para confirmar sua dependência, clique no link abaixo:</p>
-        <a href="{1}/reset-password?code={2}">Confirmar dependência</a>
-        <p>Para a sua segurança o link expira em 24 horas.</p>
-        <p>Caso você não seja um dependente, ignore este e-mail.</p>
+        <a href="{1}">Confirmar dependência</a>
+        <p>Para a sua segurança, o link expira em 24 horas.</p>
+        <p>Caso você não tenha solicitado essa mudança, ignore este e-mail.</p>
     <div>
     </body>
     </html>
-    """.format(existing_user.full_name, os.getenv("FRONTEND_URL"), reset_code)
+    """.format(existing_user.full_name, link)
 
     message = email.message.Message()
     message["Subject"] = "Confirmação de dependente"
-    message["From"] = login
+    message["From"] = os.getenv("EMAIL_LOGIN")
     message["To"] = request.email
     message.add_header("Content-Type", "text/html")
     message.set_payload(html)
@@ -214,8 +227,12 @@ def confirm_dependent(request: emailSchema.EmailSchema, db: Session = Depends(ge
     server = smtplib.SMTP("smtp.gmail.com", 587)
     server.starttls()
 
+    login = os.getenv("EMAIL_LOGIN")
+    password = os.getenv("EMAIL_PASSWORD")
     server.login(login, password)
     server.sendmail(login, request.email, message.as_string().encode("utf-8"))
+    server.quit()
     print("E-mail enviado com sucesso!") 
 
     return {"message": "Email enviado!"}
+
