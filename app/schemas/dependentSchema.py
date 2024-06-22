@@ -17,3 +17,6 @@ class Dependent(DependentBase):
 
     class Config:
         orm_mode = True
+
+class ConfirmDependentBody(BaseModel):
+    email: str

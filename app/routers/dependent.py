@@ -98,7 +98,19 @@ def update_dependent(user_id: int, dependent_id: int, dependent: dependentSchema
         setattr(db_dependent, key, value)
     db.commit()
     db.refresh(db_dependent)
-    return db_dependent
+
+    db_user = db.query(userModel.User).filter(userModel.User.id == db_dependent.dependent_id).first()
+    form_status = db.query(formModel.Form.form_status).filter(formModel.Form.user_id == db_dependent.dependent_id).first()
+    
+    return dependentSchema.Dependent(
+        user_id=db_dependent.user_id,
+        dependent_id=db_dependent.dependent_id,
+        confirmed=db_dependent.confirmed,
+        user_full_name=db_user.full_name if db_user else None,
+        user_birth_date=db_user.birth_date.isoformat() if db_user and db_user.birth_date else None,
+        user_email=db_user.email if db_user else None,
+        form_status=form_status[0] if form_status else None
+    )
 
 @router.delete("/{user_id}/{dependent_id}")
 def delete_dependent(user_id: int, dependent_id: int, db: Session = Depends(get_db)):
@@ -149,3 +161,12 @@ def read_user_dependents(user_id: int, db: Session = Depends(get_db)):
 
     return results
 
+@router.post("/confirm")
+def confirm_dependent(body: dependentSchema.ConfirmDependentBody, db: Session = Depends(get_db)):
+    db_user = db.query(userModel.User).filter(userModel.User.email == body.email).first()
+    if db_user is None:
+        raise HTTPException(status_code=404, detail="User with the specified email not found")
+    
+    # Lógica de envio de e-mail será implementada aqui futuramente
+    # Por enquanto, vamos apenas retornar uma mensagem de confirmação
+    return {"message": "Email verification sent successfully"}
