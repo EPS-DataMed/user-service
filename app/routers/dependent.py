@@ -59,11 +59,32 @@ def read_dependent(user_id: int, dependent_id: int, db: Session = Depends(get_db
 
     return dependentSchema.Dependent(**dependent_data)
 
-
 @router.get("/", response_model=List[dependentSchema.Dependent])
 def read_dependents(db: Session = Depends(get_db)):
-    dependents = db.query(dependentModel.Dependent).all()
-    return dependents
+    dependents = db.query(
+        dependentModel.Dependent,
+        userModel.User.full_name.label("user_full_name"),
+        userModel.User.birth_date.label("user_birth_date"),
+        userModel.User.email.label("user_email"),
+        formModel.Form.form_status.label("form_status")
+    ).join(
+        userModel.User, userModel.User.id == dependentModel.Dependent.dependent_id
+    ).outerjoin(
+        formModel.Form, formModel.Form.user_id == dependentModel.Dependent.dependent_id
+    ).all()
+
+    results = []
+    for dep, full_name, birth_date, email, form_status in dependents:
+        dep_data = dep.__dict__
+        dep_data.update({
+            "user_full_name": full_name,
+            "user_birth_date": birth_date.isoformat() if birth_date else None,
+            "user_email": email,
+            "form_status": form_status
+        })
+        results.append(dep_data)
+
+    return results
 
 @router.put("/{user_id}/{dependent_id}", response_model=dependentSchema.Dependent)
 def update_dependent(user_id: int, dependent_id: int, dependent: dependentSchema.DependentBase, db: Session = Depends(get_db)):
@@ -108,8 +129,12 @@ def read_user_dependents(user_id: int, db: Session = Depends(get_db)):
     ).outerjoin(
         formModel.Form, formModel.Form.user_id == dependentModel.Dependent.dependent_id
     ).filter(
-        dependentModel.Dependent.user_id == user_id
+        dependentModel.Dependent.user_id == user_id,
+        dependentModel.Dependent.confirmed == True
     ).all()
+
+    if not dependents:
+        raise HTTPException(status_code=404, detail="No confirmed dependents found")
 
     results = []
     for dep, full_name, birth_date, email, form_status in dependents:
@@ -121,5 +146,6 @@ def read_user_dependents(user_id: int, db: Session = Depends(get_db)):
             "form_status": form_status
         })
         results.append(dep_data)
-    
+
     return results
+
