@@ -182,30 +182,30 @@ def confirm_dependent(request: emailSchema.EmailSchema, db: Session = Depends(ge
     
     token_data = {
         "email": request.email,
-        "expires": str(datetime.utcnow() + timedelta(minutes=30))
+        "expires": str(datetime.utcnow() + timedelta(hours=24))
     }
 
     reset_code = jwt.encode(token_data, os.getenv("SECRET_KEY"), algorithm=os.getenv("ALGORITHM"))
     html = """
     <!DOCTYPE html>
     <html>
-    <title>Recuperação de senha</title>
+    <title>Confirmação de dependente</title>
     <body>
     <div styles="width: 100%; font-family: monospace;">
-        <h1>Recuperação de senha</h1>
+        <h1>Confirmação de dependente</h1>
         <p>Olá, {0}!</p>
-        <p>Recebemos uma solicitação de recuperação de senha para sua conta.</p>
-        <p>Para redefinir sua senha, clique no link abaixo:</p>
-        <a href="{1}/reset-password?code={2}">Recuperar senha</a>
-        <p>Para a sua segurança o link expira em 30 minutos.</p>
-        <p>Se você não solicitou a recuperação de senha, ignore este e-mail.</p>
+        <p>Recebemos uma solicitação deConfirmação de dependente para sua conta.</p>
+        <p>Para confirmar sua dependência, clique no link abaixo:</p>
+        <a href="{1}/reset-password?code={2}">Confirmar dependência</a>
+        <p>Para a sua segurança o link expira em 24 horas.</p>
+        <p>Caso você não seja um dependente, ignore este e-mail.</p>
     <div>
     </body>
     </html>
     """.format(existing_user.full_name, os.getenv("FRONTEND_URL"), reset_code)
 
     message = email.message.Message()
-    message["Subject"] = "Recuperação de senha"
+    message["Subject"] = "Confirmação de dependente"
     message["From"] = login
     message["To"] = request.email
     message.add_header("Content-Type", "text/html")
