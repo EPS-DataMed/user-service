@@ -4,7 +4,7 @@ from dotenv import load_dotenv
 from typing import List
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
-from app.models import dependentModel, userModel, formModel, doctorModel, formModel
+from app.models import dependentModel, userModel, formModel, doctorModel
 from app.schemas import dependentSchema
 from datetime import datetime, timedelta
 from app.database import get_db
@@ -17,6 +17,9 @@ load_dotenv()
 
 login = os.getenv("MAIL_USERNAME")
 password = os.getenv("MAIL_PASSWORD")
+
+if not login or not password:
+    raise ValueError("MAIL_USERNAME and MAIL_PASSWORD must be set in the environment")
 
 router = APIRouter(
     prefix="/user/dependents",
@@ -55,7 +58,6 @@ def create_dependent(dependent: dependentSchema.DependentCreate, db: Session = D
 
     return dependentSchema.Dependent(**dependent_data)
 
-
 @router.get("/{user_id}/{dependent_id}", response_model=dependentSchema.Dependent)
 def read_dependent(user_id: int, dependent_id: int, db: Session = Depends(get_db)):
     db_dependent = db.query(
@@ -72,7 +74,6 @@ def read_dependent(user_id: int, dependent_id: int, db: Session = Depends(get_db
         dependentModel.Dependent.user_id == user_id,
         dependentModel.Dependent.dependent_id == dependent_id
     ).first()
-
 
     if db_dependent is None:
         raise HTTPException(status_code=404, detail="Dependent not found")
@@ -235,53 +236,16 @@ def confirm_dependent(user_id: int, request: EmailSchema, db: Session = Depends(
 
     message = email.message.Message()
     message["Subject"] = "Confirmação de dependente"
-    message["From"] = os.getenv("EMAIL_LOGIN")
+    message["From"] = login
     message["To"] = request.email
     message.add_header("Content-Type", "text/html")
     message.set_payload(html)
 
     server = smtplib.SMTP("smtp.gmail.com", 587)
     server.starttls()
-
-    login = os.getenv("EMAIL_LOGIN")
-    password = os.getenv("EMAIL_PASSWORD")
     server.login(login, password)
     server.sendmail(login, request.email, message.as_string().encode("utf-8"))
     server.quit()
     print("E-mail enviado com sucesso!") 
 
     return {"message": "Email enviado!"}
-
-@router.get("/{user_id}", response_model=List[dependentSchema.Dependent])
-def read_user_dependents(user_id: int, db: Session = Depends(get_db)):
-    db_user = db.query(userModel.User).filter(userModel.User.id == user_id).first()
-    if db_user is None:
-        raise HTTPException(status_code=404, detail="User not found")
-
-    dependents = db.query(
-        dependentModel.Dependent,
-        userModel.User.full_name.label("user_full_name"),
-        userModel.User.birth_date.label("user_birth_date"),
-        userModel.User.email.label("user_email"),
-        formModel.Form.form_status.label("form_status")
-    ).join(
-        userModel.User, userModel.User.id == dependentModel.Dependent.dependent_id
-    ).outerjoin(
-        formModel.Form, formModel.Form.user_id == dependentModel.Dependent.dependent_id
-    ).filter(
-        dependentModel.Dependent.user_id == user_id,
-        dependentModel.Dependent.confirmed == True
-    ).all()
-
-    results = []
-    for dep, full_name, birth_date, email, form_status in dependents:
-        dep_data = dep.__dict__
-        dep_data.update({
-            "user_full_name": full_name,
-            "user_birth_date": birth_date.isoformat() if birth_date else None,
-            "user_email": email,
-            "form_status": form_status
-        })
-        results.append(dep_data)
-    
-    return results
