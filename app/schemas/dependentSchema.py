@@ -16,4 +16,7 @@ class Dependent(DependentBase):
     form_status: Optional[str]
 
     class Config:
-        from_attributes = True
+        orm_mode = True
+
+class ConfirmDependentBody(BaseModel):
+    email: str

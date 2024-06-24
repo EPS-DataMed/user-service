@@ -9,3 +9,4 @@ pytest-cov
 requests
 bcrypt==3.2.0
 passlib
+pyjwt
