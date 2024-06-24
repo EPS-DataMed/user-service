@@ -10,6 +10,7 @@ from datetime import datetime, timedelta
 from app.database import get_db
 
 import jwt
+import base64
 from app.schemas.emailSchema import EmailSchema
 import email.message
 
@@ -204,16 +205,20 @@ def confirm_dependent(user_id: int, request: EmailSchema, db: Session = Depends(
         "expires": str(datetime.utcnow() + timedelta(hours=24))
     }
 
-    reset_code = jwt.encode(token_data, os.getenv("SECRET_KEY"), algorithm=os.getenv("ALGORITHM"))
+    jwt_token = jwt.encode(token_data, os.getenv("SECRET_KEY"), algorithm=os.getenv("ALGORITHM"))
+    
+    url_safe_token = base64.urlsafe_b64encode(jwt_token.encode()).decode().rstrip('=')
+
+    print(url_safe_token)
 
     doctor = db.query(doctorModel.Doctor).filter(doctorModel.Doctor.user_id == user_id).first()
     if doctor:
         link = "{0}/auth/dependents/confirm/{1}/{2}/{3}/{4}".format(
-            os.getenv("FRONTEND_URL"), user_id, dependent_id, reset_code, doctor.crm
+            os.getenv("FRONTEND_URL"), user_id, dependent_id, url_safe_token, doctor.crm
         )
     else:
         link = "{0}/auth/dependents/confirm/{1}/{2}/{3}".format(
-            os.getenv("FRONTEND_URL"), user_id, dependent_id, reset_code
+            os.getenv("FRONTEND_URL"), user_id, dependent_id, url_safe_token
         )
 
     html = """
