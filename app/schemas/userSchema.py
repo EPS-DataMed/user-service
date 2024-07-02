@@ -11,8 +11,12 @@ class UserBase(BaseModel):
 class UserCreate(UserBase):
     password: str = Field(..., min_length=6)
 
-class UserUpdate(UserBase):
-    pass
+class UserUpdate(BaseModel):
+    full_name: Optional[str] = Field(None, max_length=255)
+    email: Optional[EmailStr] = None
+    birth_date: Optional[date] = None
+    biological_sex: Optional[str] = Field(None, max_length=1, pattern='^(M|F)$')
+
 
 class User(BaseModel):
     id: int
