@@ -293,18 +293,6 @@ def test_get_user_with_doctor(test_user, test_doctor):
     assert "doctor" in data
     assert data["doctor"]["crm"] == test_doctor["crm"]
 
-def test_update_user_email(test_user):
-    with TestingSessionLocal() as db:
-        db_user = User(**test_user)
-        db.add(db_user)
-        db.commit()
-        db.refresh(db_user)
-    
-    new_email = {"email": "newemail@example.com"}
-    response = client.patch(f"/user/users/{db_user.id}", json=new_email)
-    assert response.status_code == 200
-    assert response.json()["email"] == "newemail@example.com"
-
 def test_read_users():
     response = client.get("/user/users")
     assert response.status_code == 200
@@ -328,18 +316,6 @@ def test_delete_dependent_record(test_user, test_user_2, test_dependent):
     response = client.delete(f"/user/dependents/{db_dependent.user_id}/{db_dependent.dependent_id}")
     assert response.status_code == 200, response.text
     assert response.json() == {"ok": True}
-
-def test_update_user_email(test_user):
-    with TestingSessionLocal() as db:
-        db_user = User(**test_user)
-        db.add(db_user)
-        db.commit()
-        db.refresh(db_user)
-    
-    new_email = {"email": "newemail@example.com"}
-    response = client.patch(f"/user/users/{db_user.id}", json=new_email)
-    assert response.status_code == 200
-    assert response.json()["email"] == "newemail@example.com"
 
 def test_read_users():
     response = client.get("/user/users")
@@ -492,3 +468,115 @@ def test_get_db_yield():
     assert db.is_active
     with pytest.raises(StopIteration):
         next(db_gen)
+
+def test_update_dependent_confirmation(test_user, test_user_2, test_dependent):
+    with TestingSessionLocal() as db:
+        db_user_1 = User(
+            full_name=test_user["full_name"],
+            email=test_user["email"],
+            password=test_user["password"],
+            birth_date=test_user["birth_date"],
+            biological_sex=test_user["biological_sex"]
+        )
+        db_user_2 = User(
+            full_name=test_user_2["full_name"],
+            email=test_user_2["email"],
+            password=test_user_2["password"],
+            birth_date=test_user_2["birth_date"],
+            biological_sex=test_user_2["biological_sex"]
+        )
+        db.add(db_user_1)
+        db.add(db_user_2)
+        db.commit()
+        db.refresh(db_user_1)
+        db.refresh(db_user_2)
+
+        db_dependent = Dependent(
+            user_id=db_user_1.id,
+            dependent_id=db_user_2.id,
+            confirmed=test_dependent["confirmed"]
+        )
+        db.add(db_dependent)
+        db.commit()
+        db.refresh(db_dependent)
+
+    update_confirmation = {"user_id": db_dependent.user_id, "dependent_id": db_dependent.dependent_id, "confirmed": True}
+    response = client.put(f"/user/dependents/{db_dependent.user_id}/{db_dependent.dependent_id}", json=update_confirmation)
+    assert response.status_code == 200
+    assert response.json()["confirmed"] == True
+
+
+def test_create_dependent_for_user(test_user, test_user_2, test_dependent):
+    with TestingSessionLocal() as db:
+        db_user_1 = User(
+            full_name=test_user["full_name"],
+            email=test_user["email"],
+            password=test_user["password"],
+            birth_date=test_user["birth_date"],
+            biological_sex=test_user["biological_sex"]
+        )
+        db_user_2 = User(
+            full_name=test_user_2["full_name"],
+            email=test_user_2["email"],
+            password=test_user_2["password"],
+            birth_date=test_user_2["birth_date"],
+            biological_sex=test_user_2["biological_sex"]
+        )
+        db.add(db_user_1)
+        db.add(db_user_2)
+        db.commit()
+        db.refresh(db_user_1)
+        db.refresh(db_user_2)
+
+    response = client.post("/user/dependents", json=test_dependent)
+    assert response.status_code == 200
+    created_dependent = response.json()
+    assert created_dependent["user_id"] == test_dependent["user_id"]
+    assert created_dependent["dependent_id"] == test_dependent["dependent_id"]
+
+
+def test_update_doctor_specialty(test_user, test_doctor):
+    with TestingSessionLocal() as db:
+        db_user = User(
+            full_name=test_user["full_name"],
+            email=test_user["email"],
+            password=test_user["password"],
+            birth_date=test_user["birth_date"],
+            biological_sex=test_user["biological_sex"]
+        )
+        db.add(db_user)
+        db.commit()
+        db.refresh(db_user)
+
+        db_doctor = Doctor(
+            user_id=db_user.id,
+            crm=test_doctor["crm"],
+            specialty=test_doctor["specialty"]
+        )
+        db.add(db_doctor)
+        db.commit()
+        db.refresh(db_doctor)
+
+    update_data = {"crm": test_doctor["crm"], "specialty": "Neurologist"}
+    response = client.put(f"/user/doctors/{db_doctor.user_id}", json=update_data)
+    assert response.status_code == 200
+    assert response.json()["specialty"] == "Neurologist"
+
+def test_update_user_email(test_user):
+    with TestingSessionLocal() as db:
+        db_user = User(
+            full_name=test_user["full_name"],
+            email=test_user["email"],
+            password=test_user["password"],
+            birth_date=test_user["birth_date"],
+            biological_sex=test_user["biological_sex"]
+        )
+        db.add(db_user)
+        db.commit()
+        db.refresh(db_user)
+    
+    new_email = {"email": "newemail@example.com"}
+    response = client.patch(f"/user/users/{db_user.id}", json=new_email)
+    assert response.status_code == 200
+    assert response.json()["email"] == "newemail@example.com"
+
