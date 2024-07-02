@@ -1,18 +1,22 @@
 import json
 from datetime import date, datetime, timedelta
+from fastapi import HTTPException
 from fastapi.testclient import TestClient
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from app.main import app
-from app.database import Base, get_db
+from app.database import Base, get_db, engine, SessionLocal
 from app.models.userModel import User
 from app.models.doctorModel import Doctor
 from app.models.dependentModel import Dependent
+from app import utils
+from unittest.mock import patch
 import pytest
 import jwt
 import base64
 import os
 from app import utils
+from sqlalchemy.exc import OperationalError
 
 
 SQLALCHEMY_DATABASE_URL = "sqlite:///./test.db"
@@ -398,3 +402,93 @@ def test_invalid_email_confirmation(test_user):
     email_data = {"email": "invalid@example.com"}
     response = client.post(f"/user/dependents/confirm/{db_user.id}", json=email_data)
     assert response.status_code == 404
+
+def test_verify_password():
+    plain_password = "password123"
+    decrypted_password = "password123"
+    assert utils.verify_password(plain_password, decrypted_password)
+
+    wrong_password = "password321"
+    assert not utils.verify_password(wrong_password, decrypted_password)
+
+@patch("app.utils.requests.post")
+def test_decrypt_password(mock_post):
+    encrypted_password = "encrypted_password"
+    decrypted_password = "decrypted_password"
+
+    mock_response = mock_post.return_value
+    mock_response.status_code = 200
+    mock_response.json.return_value = {"decrypted_message": decrypted_password}
+
+    result = utils.decrypt_password(encrypted_password)
+    assert result == decrypted_password
+
+    mock_post.assert_called_once_with(
+        os.getenv("URL_DECRYPT"),
+        json={"message": encrypted_password, "private_key": os.getenv("PRIVATE_KEY")}
+    )
+
+@patch("app.utils.requests.post")
+def test_encrypt_password(mock_post):
+    password = "password123"
+    encrypted_password = "encrypted_password"
+
+    mock_response = mock_post.return_value
+    mock_response.status_code = 200
+    mock_response.json.return_value = {"encrypted_message": encrypted_password}
+
+    result = utils.encrypt_password(password)
+    assert result == encrypted_password
+
+    mock_post.assert_called_once_with(
+        os.getenv("URL_CYPHER"),
+        json={"message": password, "public_key": os.getenv("PUBLIC_KEY")}
+    )
+
+@patch("app.utils.requests.post")
+def test_decrypt_password_error(mock_post):
+    encrypted_password = "encrypted_password"
+
+    mock_response = mock_post.return_value
+    mock_response.status_code = 500
+
+    with pytest.raises(HTTPException) as exc_info:
+        utils.decrypt_password(encrypted_password)
+    assert exc_info.value.status_code == 500
+    assert exc_info.value.detail == "Error decrypting password"
+
+@patch("app.utils.requests.post")
+def test_encrypt_password_error(mock_post):
+    password = "password123"
+
+    mock_response = mock_post.return_value
+    mock_response.status_code = 500
+
+    with pytest.raises(HTTPException) as exc_info:
+        utils.encrypt_password(password)
+    assert exc_info.value.status_code == 500
+    assert exc_info.value.detail == "Error encrypting password"
+
+def test_database_url():
+    database_url = os.getenv("DATABASE_URL")
+    assert database_url, "DATABASE_URL não encontrada. Verifique o arquivo .env."
+
+def test_database_connection():
+    try:
+        connection = engine.connect()
+        connection.close()
+    except OperationalError:
+        pytest.fail("Não foi possível conectar ao banco de dados. Verifique a DATABASE_URL.")
+
+def test_get_db():
+    with SessionLocal() as session:
+        assert session.is_active
+        session.close()
+        assert session.close
+
+def test_get_db_yield():
+    db_gen = get_db()
+    db = next(db_gen)
+    assert db.is_active
+    with pytest.raises(StopIteration):
+        next(db_gen)
