@@ -1,5 +1,5 @@
 import json
-from datetime import date
+from datetime import date, datetime, timedelta
 from fastapi.testclient import TestClient
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
@@ -9,6 +9,11 @@ from app.models.userModel import User
 from app.models.doctorModel import Doctor
 from app.models.dependentModel import Dependent
 import pytest
+import jwt
+import base64
+import os
+from app import utils
+
 
 SQLALCHEMY_DATABASE_URL = "sqlite:///./test.db"
 engine = create_engine(SQLALCHEMY_DATABASE_URL, connect_args={"check_same_thread": False})
@@ -283,3 +288,113 @@ def test_get_user_with_doctor(test_user, test_doctor):
     assert data["id"] == user_id
     assert "doctor" in data
     assert data["doctor"]["crm"] == test_doctor["crm"]
+
+def test_update_user_email(test_user):
+    with TestingSessionLocal() as db:
+        db_user = User(**test_user)
+        db.add(db_user)
+        db.commit()
+        db.refresh(db_user)
+    
+    new_email = {"email": "newemail@example.com"}
+    response = client.patch(f"/user/users/{db_user.id}", json=new_email)
+    assert response.status_code == 200
+    assert response.json()["email"] == "newemail@example.com"
+
+def test_read_users():
+    response = client.get("/user/users")
+    assert response.status_code == 200
+    assert isinstance(response.json(), list)
+
+def test_delete_dependent_record(test_user, test_user_2, test_dependent):
+    with TestingSessionLocal() as db:
+        db_user_1 = User(**test_user)
+        db_user_2 = User(**test_user_2)
+        db.add(db_user_1)
+        db.add(db_user_2)
+        db.commit()
+        db.refresh(db_user_1)
+        db.refresh(db_user_2)
+
+        db_dependent = Dependent(**test_dependent)
+        db.add(db_dependent)
+        db.commit()
+        db.refresh(db_dependent)
+    
+    response = client.delete(f"/user/dependents/{db_dependent.user_id}/{db_dependent.dependent_id}")
+    assert response.status_code == 200, response.text
+    assert response.json() == {"ok": True}
+
+def test_update_user_email(test_user):
+    with TestingSessionLocal() as db:
+        db_user = User(**test_user)
+        db.add(db_user)
+        db.commit()
+        db.refresh(db_user)
+    
+    new_email = {"email": "newemail@example.com"}
+    response = client.patch(f"/user/users/{db_user.id}", json=new_email)
+    assert response.status_code == 200
+    assert response.json()["email"] == "newemail@example.com"
+
+def test_read_users():
+    response = client.get("/user/users")
+    assert response.status_code == 200
+    assert isinstance(response.json(), list)
+
+def test_delete_dependent_record(test_user, test_user_2, test_dependent):
+    with TestingSessionLocal() as db:
+        db_user_1 = User(**test_user)
+        db_user_2 = User(**test_user_2)
+        db.add(db_user_1)
+        db.add(db_user_2)
+        db.commit()
+        db.refresh(db_user_1)
+        db.refresh(db_user_2)
+
+        db_dependent = Dependent(**test_dependent)
+        db.add(db_dependent)
+        db.commit()
+        db.refresh(db_dependent)
+    
+    response = client.delete(f"/user/dependents/{db_dependent.user_id}/{db_dependent.dependent_id}")
+    assert response.status_code == 200, response.text
+    assert response.json() == {"ok": True}
+
+def test_send_confirmation_email(test_user, test_user_2):
+    with TestingSessionLocal() as db:
+        db_user_1 = User(
+            full_name=test_user["full_name"],
+            email=test_user["email"],
+            password=test_user["password"],
+            birth_date=test_user["birth_date"],
+            biological_sex=test_user["biological_sex"]
+        )
+        db_user_2 = User(
+            full_name=test_user_2["full_name"],
+            email=test_user_2["email"],
+            password=test_user_2["password"],
+            birth_date=test_user_2["birth_date"],  
+            biological_sex=test_user_2["biological_sex"]
+        )
+        db.add(db_user_1)
+        db.add(db_user_2)
+        db.commit()
+        db.refresh(db_user_1)
+        db.refresh(db_user_2)
+
+    email_data = {"email": test_user_2["email"]}
+    response = client.post(f"/user/dependents/confirm/{db_user_1.id}", json=email_data)
+    assert response.status_code == 200
+    assert response.json()["message"] == "Email enviado!"
+
+def test_invalid_email_confirmation(test_user):
+    with TestingSessionLocal() as db:
+        db_user = User(**test_user)
+        db.add(db_user)
+        db.commit()
+        db.refresh(db_user)
+    
+    email_data = {"email": "invalid@example.com"}
+    response = client.post(f"/user/dependents/confirm/{db_user.id}", json=email_data)
+    assert response.status_code == 404

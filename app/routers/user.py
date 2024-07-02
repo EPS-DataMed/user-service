@@ -8,7 +8,7 @@ from app.models.dependentModel import Dependent
 from app.models.testModel import Test
 from app.models.derivedHealthDataModel import DerivedHealthData
 from app.models.formModel import Form
-from app.schemas.userSchema import User as UserSchema, UserWithDoctor as UserWithDoctorSchema
+from app.schemas.userSchema import User as UserSchema, UserUpdate ,UserWithDoctor as UserWithDoctorSchema
 from app.database import get_db
 from app import utils
 
@@ -32,6 +32,17 @@ def read_user(user_id: int, db: Session = Depends(get_db)):
 def read_users(db: Session = Depends(get_db)):
     users = db.query(User).all()
     return users
+
+@router.patch("/{user_id}", response_model=UserSchema)
+def update_user(user_id: int, user_update: UserUpdate, db: Session = Depends(get_db)):
+    db_user = db.query(User).filter(User.id == user_id).first()
+    if db_user is None:
+        raise HTTPException(status_code=404, detail="User not found")
+    for key, value in user_update.dict(exclude_unset=True).items():
+        setattr(db_user, key, value)
+    db.commit()
+    db.refresh(db_user)
+    return db_user
 
 @router.patch("/{user_id}/password", response_model=UserSchema)
 def update_user_password(user_id: int, password_update: PasswordUpdate, db: Session = Depends(get_db)):

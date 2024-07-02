@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, Date, TIMESTAMP
+from sqlalchemy import Column, Integer, String, Date, TIMESTAMP, func
 from sqlalchemy.orm import relationship
 from app.database import Base
 
@@ -11,7 +11,7 @@ class User(Base):
     password = Column(String(2048), nullable=False)
     birth_date = Column(Date, nullable=False)
     biological_sex = Column(String(1), nullable=False)
-    creation_date = Column(TIMESTAMP, server_default="CURRENT_TIMESTAMP")
+    creation_date = Column(TIMESTAMP, server_default=func.now())
 
     doctors = relationship("Doctor", back_populates="user")
     dependents = relationship("Dependent", foreign_keys="[Dependent.user_id]")
