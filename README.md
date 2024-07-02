@@ -1,6 +1,6 @@
 # User Service
 
-[![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=EPS-DataMed_user-service&metric=alert_status)](https://sonarcloud.io/summary/new_code?id=EPS-DataMed_user-service) [![Coverage](https://sonarcloud.io/api/project_badges/measure?project=EPS-DataMed_user-service&metric=coverage)](https://sonarcloud.io/summary/new_code?id=EPS-DataMed_user-service) [![Lines of Code](https://sonarcloud.io/api/project_badges/measure?project=EPS-DataMed_user-service&metric=ncloc)](https://sonarcloud.io/summary/new_code?id=EPS-DataMed_user-service)
+[![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=EPS-DataMed_user-service&metric=alert_status)](https://sonarcloud.io/summary/new_code?id=EPS-DataMed_user-service) [![Coverage]([https://sonarcloud.io/api/project_badges/measure?project=EPS-DataMed_user-service&metric=coverage](https://sonarcloud.io/component_measures?id=EPS-DataMed_user-service&pullRequest=11&metric=new_coverage&view=list))](https://sonarcloud.io/summary/new_code?id=EPS-DataMed_user-service) [![Lines of Code](https://sonarcloud.io/api/project_badges/measure?project=EPS-DataMed_user-service&metric=ncloc)](https://sonarcloud.io/summary/new_code?id=EPS-DataMed_user-service)
 
 Serviço do DataMed responsável pelo gerenciamento de usuários
 
