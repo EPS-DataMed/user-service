@@ -1,37 +1,87 @@
 # User Service
 
-[![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=EPS-DataMed_user-service&metric=alert_status)](https://sonarcloud.io/summary/new_code?id=EPS-DataMed_user-service) [![Coverage](https://sonarcloud.io/api/project_badges/measure?project=EPS-DataMed_user-service&metric=coverage)](https://sonarcloud.io/summary/new_code?id=EPS-DataMed_user-service) [![Lines of Code](https://sonarcloud.io/api/project_badges/measure?project=EPS-DataMed_user-service&metric=ncloc)](https://sonarcloud.io/summary/new_code?id=EPS-DataMed_user-service)
+[![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=EPS-DataMed_user-service&metric=alert_status)](https://sonarcloud.io/summary/new_code?id=EPS-DataMed_user-service)
+[![Coverage](https://sonarcloud.io/api/project_badges/measure?project=EPS-DataMed_user-service&metric=coverage)](https://sonarcloud.io/summary/new_code?id=EPS-DataMed_user-service)
+[![Lines of Code](https://sonarcloud.io/api/project_badges/measure?project=EPS-DataMed_user-service&metric=ncloc)](https://sonarcloud.io/summary/new_code?id=EPS-DataMed_user-service)
+
+## Descrição do Projeto
 
 Serviço do DataMed responsável pelo gerenciamento de usuários
 
-## Requisitos
+## Configuração do ambiente de desenvolvimento local
 
-- Python 3.9 ou superior
-- SQLite (ou outro banco de dados de sua escolha)
+### Pré-requisitos
 
-## Instalação
+- Python 3.11 ou superior
+- `venv` para gerenciamento de ambientes virtuais
+- Dependências listadas em `requirements.txt`
 
-1. Clone o repositório:
+Siga os passos abaixo para configurar o ambiente de desenvolvimento local:
 
-2. Crie um ambiente virtual
-```
-python -m venv venv
-source venv/bin/activate 
-```
-Obs: No Windows use `venv\Scripts\activate`
+1. **Clone o repositório**
 
-3. Instale as dependências:
-```
-pip install -r requirements.txt
-```
+   ```bash
+   git clone <URL_DO_REPOSITORIO>
+   cd user-service
+   ```
 
-4. Rode o projeto
-```
-uvicorn app.main:app --reload
-```
+2. **Crie e ative um ambiente virtual**
 
+   ```bash
+   python -m venv venv
+   source venv/bin/activate   # No Windows, use `venv\Scripts\activate`
+   ```
 
-Obs: para rodar os testes:
-```
-pytest
-```
+3. **Instale as dependências**
+
+   ```bash
+   pip install --upgrade pip
+   pip install -r requirements.txt 
+   ```
+
+4. **Configure as variáveis de ambiente**
+
+   Crie um arquivo `.env` na raiz do projeto e copie o conteúdo do arquivo `.env.example`, ajustando os valores conforme necessário.
+
+5. **Execute a aplicação**
+
+   ```bash
+   uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+   ```
+
+   A aplicação estará disponível em `http://127.0.0.1:8000`.
+
+### Testes
+
+1. Para executar os testes, utilize o comando abaixo:
+
+    ```bash
+    pytest
+    ```
+
+## Configuração do ambiente de desenvolvimento com Docker
+
+### Pré-requisitos
+
+- Docker
+- Docker Compose
+
+1. **Configure as variáveis de ambiente (caso ainda não tenha configurado)**
+
+   Crie um arquivo `.env` na raiz do projeto e copie o conteúdo do arquivo `.env.example`, ajustando os valores conforme necessário.
+
+2. **Construir a imagem Docker**
+    ```bash
+    docker-compose build
+    ```
+
+3. **Executar o container**
+    ```bash
+    docker-compose up
+    ```
+
+A aplicação estará disponível em `http://127.0.0.1:8000`.
+
+## Licença
+
+Este projeto está licenciado sob a [MIT License](./LICENSE).
